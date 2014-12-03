@@ -7,6 +7,8 @@ Get Satisfaction announces that they will stop offering free plan since December
 
 We (ForeUI team) used Get Satsifaction for several years, and now we decide to stop using Get Satisfaction. We contacted their customer service and wish they can export our data for us to be used in new system. We tried this first because we saw they claimed that they offer one-time export when user leave (see [their official claim](https://getsatisfaction.com/getsatisfaction/topics/need_to_export_all_topics_and_their_answers#reply_9904120)). However, they refused our request and said this export service "is for our paying clients as it takes a good amount of time for our developers". So we are on our own now.
 
+It doesn't take long to make such a script, and we belive it could be useful for others, so we put it on Github.
+
 ### The used APIs
 This script uses only two APIs from the Get Satisfaction platform.
 
