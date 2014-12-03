@@ -1,6 +1,8 @@
 ## DumpGetSatisfaction
 ---
-This is a half day project, and it is an HTML page that easily dump all topics and replies from Get Satisfaction community with Javascript. JQuery is used to make the code simpler.
+This is a half day project, and it is an HTML page that easily dump all topics and replies from Get Satisfaction community with Javascript. The data is in JSON format and can be parsed and migrate to different platforms.
+
+So if you want to export all data from Get Satisfaction and then import them into new system, this project should be helpful :-D
 
 ### The story behide
 Get Satisfaction announces that they will stop offering free plan since December 3rd, 2014. The "Professional" plan listed on their website is 1,200 USD per month, which is quite expensive. As a company, the price may be affordable, but who are willing to pay so much for just a forum? Well, I can hear they start to say it is not just a forum. Of course it has some value-added services and tools, but still many people won't buy it.
