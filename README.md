@@ -1,4 +1,4 @@
-## DumpGetSatisfaction
+## Dump Get Satisfaction
 ---
 This is a half day project, and it is an HTML page that easily dump all topics and replies from Get Satisfaction community with Javascript. The data is in JSON format and can be parsed and migrate to different platforms.
 
