@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dump Topics and Replies from Get Satisfaction -- Developed by ForeUI Team</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script src="js/jquery.js"></script>
+<script>
+/*
+  This parameter is used in your Get Statisfaction community URL.
+  For example, your community URL is https://getsatisfaction.com/easynth, so your company name is "easynth".
+  Update this value to yours.
+*/
+var yourCompanyName = "easynth";
+/*
+  If your Get Satisfaction Community has many topics, you'd better dump the data page by page.
+  You can specify the "topicsPerPage" and "startLoadingFromPage" parameters below to determinte the pagination.
+*/
+var topicsPerPage = 25;
+var startLoadingFromPage = 1;
+/*
+  The "maximumTopicsToLoad" parameter below specify the maximum number of topics to dump.
+  Combinating with the "startLoadingFromPage" parameter above, you can dump the data part by part.
+  Set to -1 will dump all available topics (web browser may crash if data is too much). 
+*/
+var maximumTopicsToLoad = -1;
+/*  
+  For example:
+   
+  var topicsPerPage = 25;
+  var startLoadingFromPage = 1;
+  var maximumTopicsToLoad = 100;
+  
+  This configuration dump 4 pages a time, and each page contains 25 topics, so maximum 100 topics will be dumped.
+  When you want to dump the next 100 topics, just increase the startLoadingFromPage by 4 (because 100/25 == 4).
+*/
+
+/*
+  The variables below are internal values and are not for configuration, don't change them.
+*/
+var availableTopicsCount = 0;
+var allData = [];
+var scrollTimer;
+
+function cleanup() {
+	setTimeout(function() {
+		clearInterval(scrollTimer);
+	}, 1000);	
+}
+
+function prepareResult() {
+	setTimeout(function() {
+		var jsonData = JSON.stringify(allData);
+		
+		$('#logs').append("<p style='color:green'>Good luck for downloading the JSON file :D</p>");
+		var dl = "text/json;charset=utf-8," + encodeURIComponent(jsonData);
+		$("<div><a href='data:" + dl + "' download='data.json'>Download JSON File</a> <span style='color:gray'>(web browser may crash, or data get truncated if it is too big)</span></div>").appendTo('#result');
+		
+		$("<p style='color:green'><b>Or you can copy the JSON content below:</b>  <span style='color:gray'>(it may be a safer way to go)</span></p><textarea rows='10' cols='80' readonly>" + jsonData + "</textarea>").appendTo('#result');
+		cleanup();
+	}, 1000);	
+}
+
+function collectRepliesForTopic(index, topics, page, total) {
+	var topicData = topics[index];
+	var topicId = topicData.id;
+	$('#logs').append("<p>Collecting replys for topic #" + topicId + " on page #" + page + " (" + (index + 1) + " of " + topics.length + ").</p>");
+	$.ajax({
+		url: "https://jsonp.nodejitsu.com/?url=https://api.getsatisfaction.com/topics/" + topicId + "/replies.json",
+		dataType: "json",
+        timeout: 10000,
+		success: function(result) {
+			if (result) {
+				topicData.replies = result.data;
+				index ++;
+				if (index < topics.length) {
+					collectRepliesForTopic(index, topics, page, total);
+				} else {
+					allData = allData.concat(topics);
+					if ((page - startLoadingFromPage + 1) * topicsPerPage < total && (page * topicsPerPage - topicsPerPage + topics.length) < availableTopicsCount) {
+						collectTopicsOnPage(page + 1, total);
+					} else {
+						$('#logs').append("<p style='color:green'><b>It is done! Please wait while preparing the JSON data...</b></p><p style='color:gray'>If your browser loses response for long time, maybe you should dump the data part by part (please see configurable parameters)...</p>");
+						prepareResult();
+					}
+				}
+			} else {
+				$('#logs').append("<p style='color:red;'>Reply data is incorrect!</p>");
+				cleanup();
+			}
+		},
+		error: function() {
+			$('#logs').append("<p style='color:orange;'>Can not get replies for topic #" + topicId +".</p>");
+			setTimeout(function() {
+				$('#logs').append("<p style='color:orange;'>Retry getting replies for topic #" + topicId +"......</p>");
+				collectRepliesForTopic(index, topics, page, total);
+			}, 2000);
+		}
+	});
+}
+
+function collectTopicsOnPage(page, total) {
+	$('#logs').append("<p style='color:purple'>Dumping topics on page #" + page + ".</p>");
+	
+	$.ajax({
+		url: "https://api.getsatisfaction.com/companies/" + yourCompanyName + "/topics.json?limit=" + topicsPerPage + "&page=" + page + "&callback=?",
+		dataType: "json",
+        timeout: 10000,
+		success: function(result) {
+			if (result) {
+				collectRepliesForTopic(0, result.data, page, total);
+			} else {
+				$('#logs').append("<p style='color:red;'>Topic data is incorrect!</p>");
+				cleanup();
+			}
+		},
+		error: function() {
+			$('#logs').append("<p style='color:orange;'>Can not get topics on page #" + page +".</p>");
+			setTimeout(function() {
+				$('#logs').append("<p style='color:orange;'>Retry getting topics on page #" + page +"......</p>");
+				collectTopicsOnPage(page, total);
+			}, 2000);
+		}
+	});
+}
+
+$(document).ready(function() {
+	$.ajax({
+		url: "https://api.getsatisfaction.com/companies/" + yourCompanyName + "/topics.json?limit=1&page=0&callback=?",
+		dataType: "json",
+        timeout: 10000,
+		success: function(result) {
+			if (result && result.total) {
+				availableTopicsCount = result.total;
+				var startTopic = startLoadingFromPage * topicsPerPage - topicsPerPage + 1;
+				var endTopic = maximumTopicsToLoad > 0 ? startTopic + maximumTopicsToLoad : availableTopicsCount;
+				$('#logs').append("<p style='color:blue'>There are " + availableTopicsCount + " topics available, and you are dumping topic " + startTopic + " ~ " + endTopic + ".</p>");
+				collectTopicsOnPage(startLoadingFromPage, maximumTopicsToLoad > 0 ? maximumTopicsToLoad : availableTopicsCount);
+			} else {
+				$('#logs').append("<p>Get topic number error.</p>");
+			}
+		},
+		error: function() {
+			$('#logs').append("<p style='color:red;'>Can not get topic number.</p>");
+			cleanup();
+		}
+	});
+    scrollTimer = setInterval(function(){
+        $("html, body").animate({ scrollTop: $(document).height() }, "fast");
+    }, 500);
+});
+	
+</script>
+</head>
+
+<body>
+<h2>Dump Topics and Replies from Get Satisfaction</h2>
+<div id="logs"></div>
+<div id="result"></div>
+</body>
+</html>
